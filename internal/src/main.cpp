@@ -1,51 +1,64 @@
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GLFW/glfw3.h>
 #include <iostream>
-#include <string>
-#include "taguchi.hpp"
 
-// Placeholder function headers for your other sandbox features
-void run_cost_calculator(const std::string& file) { std::cout << "Calculating cost for " << file << "...\n"; }
-void run_nutrition_generator(const std::string& file) { std::cout << "Generating label for " << file << "...\n"; }
-void run_ledger() { std::cout << "Opening Ledger...\n"; }
+// Forward declarations for our new GUI tool modules
+void RenderRecipeTool();
+void RenderTaguchiTool();
+void RenderLedgerTool();
 
-void print_help() {
-    std::cout << "Lowkey Internal Sandbox Tool\n";
-    std::cout << "Usage: sandbox [command] [args...]\n\n";
-    std::cout << "Commands:\n";
-    std::cout << "  taguchi                  Run the Taguchi L9 array calculator\n";
-    std::cout << "  cost [recipe.json]       Run the cost-per-ounce calculator\n";
-    std::cout << "  nutrition [recipe.json]  Generate a nutritional label\n";
-    std::cout << "  ledger                   Open the iteration ledger\n";
-}
+int main() {
+    if (!glfwInit()) return -1;
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        print_help();
-        return 1;
+    // Setup window
+    GLFWwindow* window = glfwCreateWindow(1440, 900, "Lowkey Internal Sandbox", NULL, NULL);
+    if (window == NULL) return -1;
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark(); // Perfect for a lowkey vibe
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+    // Main loop
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
+        // Start the ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // Render the tools as floating/dockable windows
+        RenderRecipeTool();
+        RenderTaguchiTool();
+        RenderLedgerTool();
+
+        // Rendering
+        ImGui::Render();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
     }
 
-    std::string command = argv[1];
-
-    if (command == "taguchi") {
-        lowkey::run_L9_analysis();
-    } else if (command == "cost") {
-        if (argc < 3) {
-            std::cerr << "Error: cost calculator requires a recipe json file.\n";
-            return 1;
-        }
-        run_cost_calculator(argv[2]);
-    } else if (command == "nutrition") {
-        if (argc < 3) {
-             std::cerr << "Error: nutrition generator requires a recipe json file.\n";
-             return 1;
-        }
-        run_nutrition_generator(argv[2]);
-    } else if (command == "ledger") {
-        run_ledger();
-    } else {
-        std::cout << "Unknown command: " << command << "\n";
-        print_help();
-        return 1;
-    }
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }

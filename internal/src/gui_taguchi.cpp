@@ -8,20 +8,76 @@
 #include <sstream>
 #include <ctime>
 #include <iomanip>
+#include <cstring>
 
 namespace fs = std::filesystem;
 
-// Switched to char arrays so ImGui can natively edit them
 struct Factor {
     char name[64];
     char levels[3][64];
+    
+    Factor() {
+        memset(name, 0, sizeof(name));
+        memset(levels, 0, sizeof(levels));
+        strcpy(name, "New Ingredient");
+        strcpy(levels[0], "Low");
+        strcpy(levels[1], "Med");
+        strcpy(levels[2], "High");
+    }
 };
 
-static const int L9[9][4] = {
-    {0,0,0,0}, {0,1,1,1}, {0,2,2,2},
-    {1,0,1,2}, {1,1,2,0}, {1,2,0,1},
-    {2,0,2,1}, {2,1,0,2}, {2,2,1,0}
-};
+// --- Core Math for Dynamic Orthogonal Arrays ---
+int GetTrialCount(int num_factors) {
+    if (num_factors <= 4) return 9;
+    if (num_factors <= 13) return 27;
+    return 0; // Out of bounds for this 3-level tool
+}
+
+std::vector<std::vector<int>> GenerateOA(int num_factors) {
+    int trials = GetTrialCount(num_factors);
+    std::vector<std::vector<int>> matrix(trials, std::vector<int>(num_factors, 0));
+
+    if (trials == 9) {
+        // Standard L9 Orthogonal Array
+        const int L9[9][4] = {
+            {0,0,0,0}, {0,1,1,1}, {0,2,2,2},
+            {1,0,1,2}, {1,1,2,0}, {1,2,0,1},
+            {2,0,2,1}, {2,1,0,2}, {2,2,1,0}
+        };
+        for (int i = 0; i < 9; ++i) {
+            for (int j = 0; j < num_factors; ++j) {
+                matrix[i][j] = L9[i][j];
+            }
+        }
+    } else if (trials == 27) {
+        // Dynamic generation of an L27 (3^13) Orthogonal Array using GF(3) modulo arithmetic
+        for (int i = 0; i < 27; ++i) {
+            int c1 = i / 9;
+            int c2 = (i / 3) % 3;
+            int c3 = i % 3;
+            
+            std::vector<int> cols(13);
+            cols[0] = c1;
+            cols[1] = c2;
+            cols[2] = c3;
+            cols[3] = (c1 + c2) % 3;
+            cols[4] = (c1 + 2 * c2) % 3;
+            cols[5] = (c1 + c3) % 3;
+            cols[6] = (c1 + 2 * c3) % 3;
+            cols[7] = (c2 + c3) % 3;
+            cols[8] = (c2 + 2 * c3) % 3;
+            cols[9] = (c1 + c2 + c3) % 3;
+            cols[10] = (c1 + c2 + 2 * c3) % 3;
+            cols[11] = (c1 + 2 * c2 + c3) % 3;
+            cols[12] = (c1 + 2 * c2 + 2 * c3) % 3;
+
+            for (int j = 0; j < num_factors; ++j) {
+                matrix[i][j] = cols[j];
+            }
+        }
+    }
+    return matrix;
+}
 
 // Helper: Split CSV line by commas
 std::vector<std::string> SplitCSVLine(const std::string& line) {
@@ -34,8 +90,8 @@ std::vector<std::string> SplitCSVLine(const std::string& line) {
     return result;
 }
 
-// Helper: Read a CSV and load the most recent 9 iterations and factor names
-void LoadCSVData(const std::string& filepath, Factor factors[4], float scores[9]) {
+// Helper: Dynamic CSV Loader
+void LoadCSVData(const std::string& filepath, std::vector<Factor>& factors, std::vector<float>& scores) {
     std::ifstream file(filepath);
     if (!file.is_open()) return;
     
@@ -43,31 +99,35 @@ void LoadCSVData(const std::string& filepath, Factor factors[4], float scores[9]
     if (!std::getline(file, line)) return; // Read header
     
     auto headers = SplitCSVLine(line);
-    if (headers.size() >= 6) {
-        strncpy(factors[0].name, headers[2].c_str(), 63);
-        strncpy(factors[1].name, headers[3].c_str(), 63);
-        strncpy(factors[2].name, headers[4].c_str(), 63);
-        strncpy(factors[3].name, headers[5].c_str(), 63);
+    if (headers.size() < 4) return; // Min required columns: Timestamp, Trial_Num, Factor1, Score
+
+    int num_factors = headers.size() - 3;
+    factors.resize(num_factors);
+    
+    for (int i = 0; i < num_factors; ++i) {
+        strncpy(factors[i].name, headers[2 + i].c_str(), 63);
     }
+
+    int expected_trials = GetTrialCount(num_factors);
+    scores.assign(expected_trials, 0.0f);
+    auto matrix = GenerateOA(num_factors);
 
     std::vector<std::string> all_lines;
     while (std::getline(file, line)) {
         if (!line.empty()) all_lines.push_back(line);
     }
 
-    // Grab the last 9 rows (the most recent iteration batch)
-    int start_idx = std::max(0, (int)all_lines.size() - 9);
+    // Grab the most recent batch of trials
+    int start_idx = std::max(0, (int)all_lines.size() - expected_trials);
     int score_idx = 0;
     
-    for (int i = start_idx; i < all_lines.size() && score_idx < 9; ++i) {
+    for (int i = start_idx; i < all_lines.size() && score_idx < expected_trials; ++i) {
         auto cols = SplitCSVLine(all_lines[i]);
-        if (cols.size() >= 7) {
-            // Re-sync UI levels using the L9 array mapping structure
-            for(int f = 0; f < 4; f++) {
-                int level_idx = L9[score_idx][f];
+        if (cols.size() >= 3 + num_factors) {
+            for(int f = 0; f < num_factors; f++) {
+                int level_idx = matrix[score_idx][f];
                 strncpy(factors[f].levels[level_idx], cols[2 + f].c_str(), 63);
             }
-            
             try {
                 scores[score_idx] = std::stof(cols.back());
             } catch (...) {
@@ -81,20 +141,30 @@ void LoadCSVData(const std::string& filepath, Factor factors[4], float scores[9]
 void RenderTaguchiTool() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(1400, 500), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Taguchi L9 Optimizer");
+    ImGui::Begin("Taguchi Optimizer (Dynamic)");
 
-    // Default configuration
-    static Factor factors[4] = {
-        {"L-Theanine",  {"100mg", "200mg", "400mg"}},
-        {"L-Tyrosine",  {"250mg", "500mg", "1000mg"}},
-        {"Magnesium",   {"50mg",  "150mg", "300mg"}},
-        {"Citric Acid", {"0.5g",  "1.0g",  "1.5g"}}
-    };
+    static std::vector<Factor> factors(4);
+    static bool first_run = true;
+    if (first_run) {
+        strcpy(factors[0].name, "L-Theanine");
+        strcpy(factors[0].levels[0], "100mg"); strcpy(factors[0].levels[1], "200mg"); strcpy(factors[0].levels[2], "400mg");
+        strcpy(factors[1].name, "L-Tyrosine");
+        strcpy(factors[1].levels[0], "250mg"); strcpy(factors[1].levels[1], "500mg"); strcpy(factors[1].levels[2], "1000mg");
+        strcpy(factors[2].name, "Magnesium");
+        strcpy(factors[2].levels[0], "50mg");  strcpy(factors[2].levels[1], "150mg"); strcpy(factors[2].levels[2], "300mg");
+        strcpy(factors[3].name, "Citric Acid");
+        strcpy(factors[3].levels[0], "0.5g");  strcpy(factors[3].levels[1], "1.0g");  strcpy(factors[3].levels[2], "1.5g");
+        first_run = false;
+    }
 
-    static float scores[9] = {0.0f};
+    int initial_trials = GetTrialCount(factors.size());
+    static std::vector<float> scores;
+    if (scores.size() != initial_trials) {
+        scores.resize(initial_trials, 0.0f);
+    }
     
     // Directory Management
-    std::string dir_path = "../csvs";
+    std::string dir_path = "../results/taguchi";
     std::error_code ec;
     if (!fs::exists(dir_path, ec)) {
         fs::create_directories(dir_path, ec);
@@ -116,10 +186,7 @@ void RenderTaguchiTool() {
         }
     };
 
-    if (!init_csvs) {
-        refresh_csvs();
-        init_csvs = true;
-    }
+    if (!init_csvs) { refresh_csvs(); init_csvs = true; }
 
     // --- CSV Management UI ---
     ImGui::Text("Data Management");
@@ -156,14 +223,30 @@ void RenderTaguchiTool() {
 
     // --- Factor Editor UI ---
     ImGui::Text("Factor Configuration");
-    if (ImGui::BeginTable("FactorTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::SameLine();
+    if (ImGui::Button("+ Add Ingredient") && factors.size() < 13) {
+        factors.push_back(Factor());
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("- Remove Ingredient") && factors.size() > 1) {
+        factors.pop_back();
+    }
+    ImGui::SameLine(); ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "(Count: %zu | Max: 13)", factors.size());
+
+    // CRITICAL FIX: Recalculate trials immediately after factors size changes
+    int current_trials = GetTrialCount(factors.size());
+    if (scores.size() != current_trials) {
+        scores.resize(current_trials, 0.0f);
+    }
+
+    if (ImGui::BeginTable("FactorTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_ScrollY, ImVec2(0, 150))) {
         ImGui::TableSetupColumn("Factor Name");
         ImGui::TableSetupColumn("Level 1");
         ImGui::TableSetupColumn("Level 2");
         ImGui::TableSetupColumn("Level 3");
         ImGui::TableHeadersRow();
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < factors.size(); i++) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::PushID(i * 10 + 0); ImGui::InputText("##name", factors[i].name, 64); ImGui::PopID();
@@ -178,24 +261,26 @@ void RenderTaguchiTool() {
 
     ImGui::Separator();
 
-    // --- L9 Matrix & Scoring ---
-    ImGui::Text("Batch Execution & Scoring");
-    if (ImGui::BeginTable("L9 Trials", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    // --- Dynamic Matrix Execution & Scoring ---
+    auto matrix = GenerateOA(factors.size());
+    
+    ImGui::Text("Batch Execution & Scoring (%d Trials Mode)", current_trials);
+    if (ImGui::BeginTable("Trials", factors.size() + 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX, ImVec2(0, 200))) {
         ImGui::TableSetupColumn("Batch");
-        for (int i=0; i<4; i++) ImGui::TableSetupColumn(factors[i].name);
+        for (int i = 0; i < factors.size(); i++) ImGui::TableSetupColumn(factors[i].name);
         ImGui::TableSetupColumn("Score (1-10)");
         ImGui::TableHeadersRow();
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < current_trials; i++) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0); ImGui::Text("#%d", i + 1);
             
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < factors.size(); j++) {
                 ImGui::TableSetColumnIndex(j + 1);
-                ImGui::Text("%s", factors[j].levels[L9[i][j]]);
+                ImGui::Text("%s", factors[j].levels[matrix[i][j]]);
             }
             
-            ImGui::TableSetColumnIndex(5);
+            ImGui::TableSetColumnIndex(factors.size() + 1);
             ImGui::PushID(i);
             ImGui::SetNextItemWidth(100);
             ImGui::InputFloat("##score", &scores[i], 0.5f, 1.0f, "%.1f");
@@ -206,49 +291,60 @@ void RenderTaguchiTool() {
 
     // --- CSV Export Logic ---
     if (ImGui::Button("Export / Append to CSV")) {
-        if (current_csv.empty()) {
-            current_csv = "default_experiment.csv";
-        }
+        if (current_csv.empty()) current_csv = "default_experiment.csv";
         std::string filepath = dir_path + "/" + current_csv;
         bool is_new = !fs::exists(filepath);
         
         std::ofstream file(filepath, std::ios::app);
         if (file.is_open()) {
             if (is_new) {
-                file << "Timestamp,Trial_Num," 
-                     << factors[0].name << "," << factors[1].name << "," 
-                     << factors[2].name << "," << factors[3].name << ",Score\n";
+                file << "Timestamp,Trial_Num,";
+                for (int j = 0; j < factors.size(); j++) file << factors[j].name << ",";
+                file << "Score\n";
             }
             
             auto now = std::time(nullptr);
             auto tm = *std::localtime(&now);
             
-            for (int i = 0; i < 9; ++i) {
+            for (int i = 0; i < current_trials; ++i) {
                 file << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "," << (i + 1) << ",";
-                for (int j = 0; j < 4; ++j) {
-                    file << factors[j].levels[L9[i][j]] << ",";
+                for (int j = 0; j < factors.size(); ++j) {
+                    file << factors[j].levels[matrix[i][j]] << ",";
                 }
                 file << scores[i] << "\n";
             }
-            refresh_csvs(); // Ensure the file shows up in the combo box if it was new
+            refresh_csvs();
         }
     }
 
     ImGui::Separator();
 
-    // --- Analysis ---
+    // --- Dynamic Analysis ---
     ImGui::Text("Mean Response Analysis");
-    for (int f = 0; f < 4; ++f) {
-        float level_means[3] = {0, 0, 0};
-        for (int t = 0; t < 9; ++t) level_means[L9[t][f]] += scores[t];
-        for (int i = 0; i < 3; ++i) level_means[i] /= 3.0f;
+    if (ImGui::BeginChild("AnalysisRegion", ImVec2(0, 0), true)) {
+        for (int f = 0; f < factors.size(); ++f) {
+            float level_means[3] = {0, 0, 0};
+            float level_counts[3] = {0, 0, 0};
+            
+            for (int t = 0; t < current_trials; ++t) {
+                int lvl = matrix[t][f];
+                level_means[lvl] += scores[t];
+                level_counts[lvl]++;
+            }
+            
+            for (int i = 0; i < 3; ++i) {
+                if (level_counts[i] > 0) level_means[i] /= level_counts[i];
+            }
 
-        float max_val = std::max({level_means[0], level_means[1], level_means[2]});
-        float min_val = std::min({level_means[0], level_means[1], level_means[2]});
-        
-        ImGui::Text("%s (Delta: %.2f)", factors[f].name, max_val - min_val);
-        ImGui::Text("  L1: %.2f | L2: %.2f | L3: %.2f", level_means[0], level_means[1], level_means[2]);
+            float max_val = std::max({level_means[0], level_means[1], level_means[2]});
+            float min_val = std::min({level_means[0], level_means[1], level_means[2]});
+            
+            ImGui::Text("%s (Delta: %.2f)", factors[f].name, max_val - min_val);
+            ImGui::Text("  L1: %.2f | L2: %.2f | L3: %.2f", level_means[0], level_means[1], level_means[2]);
+            ImGui::Spacing();
+        }
     }
+    ImGui::EndChild();
 
     ImGui::End();
 }

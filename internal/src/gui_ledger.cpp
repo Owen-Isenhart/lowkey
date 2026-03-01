@@ -2,6 +2,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 void RenderLedgerTool() {
     ImGui::SetNextWindowPos(ImVec2(820, 540), ImGuiCond_FirstUseEver);
@@ -13,12 +16,22 @@ void RenderLedgerTool() {
     static std::vector<std::string> log_entries;
     static bool loaded = false;
 
+    std::string dir_path = "../results/ledger";
+    std::string filepath = dir_path + "/ledger.txt";
+
     // Load existing entries once
     if (!loaded) {
-        std::ifstream f("ledger.txt");
+        std::error_code ec;
+        if (!fs::exists(dir_path, ec)) {
+            fs::create_directories(dir_path, ec);
+        }
+
+        std::ifstream f(filepath);
         std::string line;
-        while (std::getline(f, line)) {
-            log_entries.push_back(line);
+        if (f.is_open()) {
+            while (std::getline(f, line)) {
+                log_entries.push_back(line);
+            }
         }
         loaded = true;
     }
@@ -30,7 +43,7 @@ void RenderLedgerTool() {
         std::string entry = "Version: " + std::string(version) + " | Notes: " + std::string(notes);
         log_entries.push_back(entry);
         
-        std::ofstream f("ledger.txt", std::ios::app);
+        std::ofstream f(filepath, std::ios::app);
         f << entry << "\n";
         
         notes[0] = '\0'; // Clear input

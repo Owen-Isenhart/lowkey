@@ -31,9 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           flexDirection: "column",
         }}
       >
-        <Navbar />
-        <main style={{ flex: 1 }}>{children}</main>
-        <Footer />
+        <Providers>
+          <Navbar />
+          <main style={{ flex: 1 }}>{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

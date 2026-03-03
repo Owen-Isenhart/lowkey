@@ -72,28 +72,30 @@ export default function QRScanner() {
 
     setStatus("scanning");
 
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true },
-      false
-    );
-    scannerRef.current = scanner;
+    setTimeout(() => {
+      const scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true },
+        false
+      );
+      scannerRef.current = scanner;
 
-    scanner.render(
-      async (text: string) => {
-        setStatus("found");
-        await scanner.clear().catch(() => {});
-        try {
-          const url = new URL(text);
-          router.push(url.pathname);
-        } catch {
-          router.push(`/batch/${text.trim()}`);
+      scanner.render(
+        async (text: string) => {
+          setStatus("found");
+          await scanner.clear().catch(() => {});
+          try {
+            const url = new URL(text);
+            router.push(url.pathname);
+          } catch {
+            router.push(`/batch/${text.trim()}`);
+          }
+        },
+        (err: string) => {
+          if (!err.includes("NotFoundException")) console.warn("QR:", err);
         }
-      },
-      (err: string) => {
-        if (!err.includes("NotFoundException")) console.warn("QR:", err);
-      }
-    );
+      );
+    }, 50);
   }
 
   function handleManualSubmit(e: React.FormEvent) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createEvent, deleteEvent } from "@/app/admin/actions";
+import { createEvent, deleteEvent, toggleEventVisibility } from "@/app/admin/actions";
 import type { LowkeyEvent } from "@/types";
 
 interface Props { events: LowkeyEvent[] }
@@ -15,22 +15,31 @@ const FIELDS = [
   { name: "end_date",    label: "End Date",        type: "datetime-local", placeholder: "" },
   { name: "lat",         label: "Latitude",        type: "number",         placeholder: "30.2849" },
   { name: "lng",         label: "Longitude",       type: "number",         placeholder: "-97.7341" },
+  { name: "image_url",   label: "Image URL",       type: "url",            placeholder: "https://example.com/event-banner.jpg" },
 ];
 
-export default function EventsManager({ events }: Props) {
+export default function EventsManager({ events: initialEvents }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [events, setEvents] = useState<LowkeyEvent[]>(initialEvents);
   const [state, setState] = useState<{ status: "idle" | "loading" | "ok" | "error"; message?: string; errors?: Record<string, string> }>({ status: "idle" });
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [toggling, setToggling] = useState<number | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!formRef.current) return;
     setState({ status: "loading" });
     const fd = new FormData(formRef.current);
+    
     const result = await createEvent(fd);
     if ("success" in result) {
+      // Use the actual event data from server
+      setEvents([...events, result.event]);
       setState({ status: "ok", message: "Event created." });
       formRef.current.reset();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setState({ status: "idle" }), 3000);
     } else {
       setState({ status: "error", message: result.error, errors: result.errors });
     }
@@ -38,8 +47,22 @@ export default function EventsManager({ events }: Props) {
 
   async function handleDelete(id: number) {
     setDeleting(id);
-    await deleteEvent(id);
+    const result = await deleteEvent(id);
+    if ("success" in result) {
+      setEvents(events.filter(e => e.id !== id));
+    }
     setDeleting(null);
+  }
+
+  async function handleToggleVisibility(id: number, isCurrentlyHidden: boolean) {
+    setToggling(id);
+    const result = await toggleEventVisibility(id, !isCurrentlyHidden);
+    if ("success" in result) {
+      setEvents(events.map(e => 
+        e.id === id ? { ...e, is_hidden: !isCurrentlyHidden } : e
+      ));
+    }
+    setToggling(null);
   }
 
   return (
@@ -58,21 +81,50 @@ export default function EventsManager({ events }: Props) {
                 background: "var(--bg-elevated)", border: "1px solid var(--border)",
                 borderRadius: "var(--radius-md)",
               }}>
-                <div>
-                  <p style={{ fontSize: "0.875rem", fontWeight: 500 }}>{ev.title}</p>
-                  <p className="text-label">{ev.city} · {new Date(ev.date).toLocaleDateString()}</p>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center", flex: 1 }}>
+                  {ev.image_url && (
+                    <img src={ev.image_url} alt={ev.title}
+                      style={{
+                        width: "48px", height: "48px", objectFit: "cover",
+                        borderRadius: "var(--radius-sm)", flexShrink: 0
+                      }} 
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  )}
+                  <div>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 500 }}>{ev.title}</p>
+                    <p className="text-label">{ev.city} · {new Date(ev.date).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(ev.id)}
-                  disabled={deleting === ev.id}
-                  style={{
-                    background: "none", border: "1px solid #d46b6b44", borderRadius: "var(--radius-sm)",
-                    color: "#d46b6b", padding: "6px 12px", fontSize: "0.75rem", cursor: "pointer",
-                    opacity: deleting === ev.id ? 0.5 : 1,
-                  }}
-                >
-                  {deleting === ev.id ? "Deleting…" : "Delete"}
-                </button>
+                <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleToggleVisibility(ev.id, ev.is_hidden ?? false)}
+                    disabled={toggling === ev.id}
+                    style={{
+                      background: "none",
+                      border: `1px solid ${ev.is_hidden ? "#ffb94644" : "#5dba6344"}`,
+                      borderRadius: "var(--radius-sm)",
+                      color: ev.is_hidden ? "#ffb946" : "#5dba63",
+                      padding: "6px 12px",
+                      fontSize: "0.75rem",
+                      cursor: "pointer",
+                      opacity: toggling === ev.id ? 0.5 : 1,
+                    }}
+                  >
+                    {toggling === ev.id ? "Updating…" : (ev.is_hidden ? "Hidden" : "Visible")}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev.id)}
+                    disabled={deleting === ev.id}
+                    style={{
+                      background: "none", border: "1px solid #d46b6b44", borderRadius: "var(--radius-sm)",
+                      color: "#d46b6b", padding: "6px 12px", fontSize: "0.75rem", cursor: "pointer",
+                      opacity: deleting === ev.id ? 0.5 : 1, flexShrink: 0
+                    }}
+                  >
+                    {deleting === ev.id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

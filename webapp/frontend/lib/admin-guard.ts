@@ -1,34 +1,37 @@
 import { auth } from "@/lib/auth";
-import { queryOne } from "@/lib/db";
 
 /**
  * Server-side admin guard.
  *
- * Re-fetches `is_admin` from the database on every call — never trusts the
- * JWT alone. Call at the top of every Server Action that mutates data.
- *
+ * Re-fetches user profile via Express API with Backend JWT.
  * Throws a typed Error if:
  * - No session exists (unauthenticated)
- * - `is_admin` is false in the database (not admin)
+ * - `isAdmin` is false via API (not admin)
  */
-export async function requireAdmin(): Promise<{ userId: string; email: string }> {
+export async function requireAdmin(): Promise<{ userId: string; email: string; token: string }> {
     const session = await auth();
+    const token = (session as any)?.backendToken;
 
-    if (!session?.user?.id || !session.user.email) {
+    if (!session?.user?.id || !session.user.email || !token) {
         throw new AdminError("Unauthenticated");
     }
 
-    // Re-verify from DB — JWT alone is not sufficient
-    const row = await queryOne<{ is_admin: boolean }>(
-        "SELECT is_admin FROM users WHERE id = $1",
-        [session.user.id]
-    );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const res = await fetch(`${apiUrl}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
+    });
 
-    if (!row?.is_admin) {
+    if (!res.ok) {
         throw new AdminError("Forbidden");
     }
 
-    return { userId: session.user.id, email: session.user.email };
+    const data = await res.json();
+    if (!data?.isAdmin) {
+        throw new AdminError("Forbidden");
+    }
+
+    return { userId: session.user.id, email: session.user.email, token };
 }
 
 export class AdminError extends Error {

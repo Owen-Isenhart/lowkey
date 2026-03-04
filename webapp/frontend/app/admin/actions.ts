@@ -1,11 +1,11 @@
 "use server";
 
 import { requireAdmin, handleActionError } from "@/lib/admin-guard";
-import { query, queryOne } from "@/lib/db";
 import {
     EventSchema,
     BatchSchema,
     BatchSourceSchema,
+    BannerSchema,
     parseFormData,
 } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 
 export async function createEvent(
     formData: FormData
-): Promise<{ success: true } | { error: string; errors?: Record<string, string> }> {
+): Promise<{ success: true; event: any } | { error: string; errors?: Record<string, string> }> {
     try {
         await requireAdmin();
 
@@ -23,27 +23,51 @@ export async function createEvent(
             return { error: "Validation failed.", errors: parsed.errors };
         }
 
-        const { title, description, location, city, lat, lng, date, end_date } = parsed.data;
+        const { title, description, location, city, lat, lng, date, end_date, image_url } = parsed.data;
 
-        await query(
-            `INSERT INTO events (title, description, location, city, lat, lng, date, end_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        console.log("[createEvent] Creating event:", { title, city, date, apiUrl });
+
+        const res = await fetch(`${apiUrl}/events`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
                 title,
-                description ?? null,
+                description: description ?? null,
                 location,
                 city,
-                lat ?? null,
-                lng ?? null,
-                new Date(date).toISOString(),
-                end_date ? new Date(end_date).toISOString() : null,
-            ]
-        );
+                lat: lat ?? null,
+                lng: lng ?? null,
+                date: new Date(date).toISOString(),
+                end_date: end_date ? new Date(end_date).toISOString() : null,
+                image_url: image_url ?? null,
+            })
+        });
 
+        console.log("[createEvent] Response status:", res.status);
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            console.error("[createEvent] Error response:", errorData);
+            throw new Error(errorData.error || "Backend failed to create event");
+        }
+
+        const event = await res.json();
+        console.log("[createEvent] Event created:", event);
+        
+        console.log("[createEvent] Revalidating paths");
+        revalidatePath("/");
         revalidatePath("/events");
         revalidatePath("/admin/events");
-        return { success: true };
+        
+        return { success: true, event };
     } catch (err) {
+        console.error("[createEvent] Error:", err);
         return handleActionError(err);
     }
 }
@@ -60,7 +84,56 @@ export async function deleteEvent(
             return { error: "Invalid event ID." };
         }
 
-        await query("DELETE FROM events WHERE id = $1", [numId]);
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/events/${numId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Backend failed to delete event");
+
+        revalidatePath("/events");
+        revalidatePath("/admin/events");
+        return { success: true };
+    } catch (err) {
+        return handleActionError(err);
+    }
+}
+
+export async function toggleEventVisibility(
+    id: unknown,
+    isHidden: boolean
+): Promise<{ success: true } | { error: string }> {
+    try {
+        await requireAdmin();
+
+        const numId = Number(id);
+        if (!Number.isInteger(numId) || numId <= 0) {
+            return { error: "Invalid event ID." };
+        }
+
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        console.log(`[toggleEventVisibility] Toggling event ${numId} to is_hidden=${isHidden}`);
+
+        const res = await fetch(`${apiUrl}/events/${numId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ is_hidden: isHidden })
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Backend failed to update event visibility");
+        }
+
+        console.log(`[toggleEventVisibility] Event ${numId} visibility updated`);
         revalidatePath("/events");
         revalidatePath("/admin/events");
         return { success: true };
@@ -73,7 +146,7 @@ export async function deleteEvent(
 
 export async function createBatch(
     formData: FormData
-): Promise<{ success: true; batchId: string } | { error: string; errors?: Record<string, string> }> {
+): Promise<{ success: true; batchId: string; batch: any } | { error: string; errors?: Record<string, string> }> {
     try {
         await requireAdmin();
 
@@ -82,25 +155,40 @@ export async function createBatch(
             return { error: "Validation failed.", errors: parsed.errors };
         }
 
-        const { id, recipe_version, mixed_at, ph_level, notes } = parsed.data;
+        const { id: batchId, recipe_version, mixed_at, ph_level, notes, image_url } = parsed.data;
 
-        // Check for duplicate ID
-        const existing = await queryOne<{ id: string }>(
-            "SELECT id FROM batches WHERE id = $1",
-            [id]
-        );
-        if (existing) {
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/batches`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                id: batchId,
+                recipe_version,
+                mixed_at: new Date(mixed_at).toISOString(),
+                ph_level: ph_level ?? null,
+                notes: notes ?? null,
+                image_url: image_url ?? null
+            })
+        });
+
+        if (res.status === 409) {
             return { error: "Validation failed.", errors: { id: "Batch ID already exists." } };
         }
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Backend failed to create batch");
+        }
 
-        await query(
-            `INSERT INTO batches (id, recipe_version, mixed_at, ph_level, notes)
-       VALUES ($1, $2, $3, $4, $5)`,
-            [id, recipe_version, new Date(mixed_at).toISOString(), ph_level ?? null, notes ?? null]
-        );
-
+        const batch = await res.json();
+        revalidatePath("/");
+        revalidatePath("/batch");
         revalidatePath("/admin/batches");
-        return { success: true, batchId: id };
+        return { success: true, batchId, batch };
     } catch (err) {
         return handleActionError(err);
     }
@@ -116,7 +204,16 @@ export async function deleteBatch(
         const parsed = BatchSchema.shape.id.safeParse(id);
         if (!parsed.success) return { error: "Invalid batch ID." };
 
-        await query("DELETE FROM batches WHERE id = $1", [parsed.data]);
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/batches/${parsed.data}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Backend failed to delete batch");
+
         revalidatePath("/admin/batches");
         return { success: true };
     } catch (err) {
@@ -124,7 +221,83 @@ export async function deleteBatch(
     }
 }
 
-export async function addBatchSource(
+// ─── Banners ──────────────────────────────────────────────────────────────────
+
+export async function createBanner(
+    formData: FormData
+): Promise<{ success: true; bannerId: string; banner: any } | { error: string; errors?: Record<string, string> }> {
+    try {
+        await requireAdmin();
+
+        const parsed = parseFormData(BannerSchema, formData);
+        if (!parsed.success) {
+            return { error: "Validation failed.", errors: parsed.errors };
+        }
+
+        const { title, content, bannerType, expiresAt } = parsed.data;
+
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/banners`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title,
+                content,
+                bannerType,
+                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+            })
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Backend failed to create banner");
+        }
+
+        const banner = await res.json();
+        revalidatePath("/admin");
+        revalidatePath("/admin/banners");
+        return { success: true, bannerId: String(banner.id), banner };
+    } catch (err) {
+        return handleActionError(err);
+    }
+}
+
+export async function deleteBanner(
+    id: unknown
+): Promise<{ success: true } | { error: string }> {
+    try {
+        await requireAdmin();
+
+        // Banner IDs are UUIDs, just validate as string
+        if (typeof id !== 'string' || !id.trim()) {
+            return { error: "Invalid banner ID." };
+        }
+
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/banners/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Backend failed to delete banner");
+        }
+
+        revalidatePath("/admin");
+        revalidatePath("/admin/banners");
+        return { success: true };
+    } catch (err) {
+        return handleActionError(err);
+    }
+}export async function addBatchSource(
     batchId: unknown,
     formData: FormData
 ): Promise<{ success: true } | { error: string; errors?: Record<string, string> }> {
@@ -139,11 +312,19 @@ export async function addBatchSource(
 
         const { ingredient_name, supplier, lot_number } = parsed.data;
 
-        await query(
-            `INSERT INTO batch_ingredient_sources (batch_id, ingredient_name, supplier, lot_number)
-       VALUES ($1, $2, $3, $4)`,
-            [idParsed.data, ingredient_name, supplier, lot_number]
-        );
+        const { token } = await requireAdmin();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+        const res = await fetch(`${apiUrl}/batches/${idParsed.data}/sources`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ ingredient_name, supplier, lot_number })
+        });
+
+        if (!res.ok) throw new Error("Backend failed to add batch source");
 
         revalidatePath("/admin/batches");
         return { success: true };

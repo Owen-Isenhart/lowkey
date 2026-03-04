@@ -57,7 +57,7 @@ const productService = {
 
   async getProduct(productId) {
     const { rows: products } = await pool.query(
-      `SELECT p.*, i.quantity_on_hand, i.quantity_reserved, i.quantity_available
+      `SELECT p.*, i.quantity_on_hand, i.quantity_reserved
        FROM products p
        LEFT JOIN inventory i ON p.id = i.product_id
        WHERE p.id = $1`,
@@ -68,12 +68,17 @@ const productService = {
       throw new NotFoundError('Product');
     }
 
-    return products[0];
+    const product = products[0];
+    // Calculate quantity_available in application
+    if (product.quantity_on_hand !== null) {
+      product.quantity_available = product.quantity_on_hand - (product.quantity_reserved || 0);
+    }
+    return product;
   },
 
   async getProductByName(name) {
     const { rows: products } = await pool.query(
-      `SELECT p.*, i.quantity_on_hand, i.quantity_reserved, i.quantity_available
+      `SELECT p.*, i.quantity_on_hand, i.quantity_reserved
        FROM products p
        LEFT JOIN inventory i ON p.id = i.product_id
        WHERE p.name = $1`,
@@ -84,20 +89,31 @@ const productService = {
       throw new NotFoundError('Product');
     }
 
-    return products[0];
+    const product = products[0];
+    // Calculate quantity_available in application
+    if (product.quantity_on_hand !== null) {
+      product.quantity_available = product.quantity_on_hand - (product.quantity_reserved || 0);
+    }
+    return product;
   },
 
   async getAllProducts(includeInactive = false) {
     const query = `
-      SELECT p.*, i.quantity_on_hand, i.quantity_reserved, i.quantity_available
+      SELECT p.*, i.quantity_on_hand, i.quantity_reserved
       FROM products p
       LEFT JOIN inventory i ON p.id = i.product_id
-      ${includeInactive ? '' : 'WHERE p.is_active = true'}
+      ${includeInactive ? '' : 'WHERE p.active = true'}
       ORDER BY p.name ASC
     `;
 
     const { rows } = await pool.query(query);
-    return rows;
+    // Calculate quantity_available in application
+    return rows.map(product => ({
+      ...product,
+      quantity_available: product.quantity_on_hand !== null 
+        ? product.quantity_on_hand - (product.quantity_reserved || 0)
+        : 0
+    }));
   },
 
   async updateProduct(productId, updates) {
@@ -127,7 +143,7 @@ const productService = {
     const { rows: result } = await pool.query(
       `UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP
        WHERE id = $${updateKeys.length + 1}
-       RETURNING id, name, description, price_cents, obj_model_path, is_active, created_at, updated_at`,
+       RETURNING id, name, description, price_cents, obj_model_path, active, created_at, updated_at`,
       [...values, productId]
     );
 

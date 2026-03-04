@@ -1,0 +1,120 @@
+{
+  "version": "v2.0.0",
+  "name": "Lowkey Tropical (Initial Release)",
+  "description": "The original tropical formula featuring mango and passion fruit with basic electrolyte support.",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm, focused attention without sedation.",
+      "amount": 180,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Clean, crisp carbonated base.",
+      "amount": 340,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Mango Flavor Extract",
+      "category": "Flavour",
+      "description": "Mango extract for tropical character.",
+      "amount": 7,
+      "unit": "g",
+      "cost_per_bulk": 54.00,
+      "bulk_amount": 450,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 22,
+        "carbs_g": 5.2,
+        "sugar_g": 0.2,
+        "sodium_mg": 1
+      }
+    },
+    {
+      "name": "Passion Fruit Extract",
+      "category": "Flavour",
+      "description": "Passion fruit for tartness.",
+      "amount": 4,
+      "unit": "g",
+      "cost_per_bulk": 62.00,
+      "bulk_amount": 300,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 18,
+        "carbs_g": 4.1,
+        "sugar_g": 0.3,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Essential electrolyte.",
+      "amount": 140,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Potassium Chloride",
+      "category": "Electrolyte",
+      "description": "Balances electrolytes.",
+      "amount": 140,
+      "unit": "mg",
+      "cost_per_bulk": 8.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Erythritol",
+      "category": "Sweetener",
+      "description": "Zero-calorie sweetener.",
+      "amount": 2.5,
+      "unit": "g",
+      "cost_per_bulk": 12.00,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 20,
+        "carbs_g": 100,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

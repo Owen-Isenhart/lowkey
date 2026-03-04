@@ -20,6 +20,7 @@ export const EventSchema = z.object({
     end_date: z.string().optional().refine(
         (v) => !v || !isNaN(Date.parse(v)), "Invalid end date"
     ),
+    image_url: z.string().url().optional(),
 });
 
 export type EventInput = z.infer<typeof EventSchema>;
@@ -31,6 +32,7 @@ export const BatchSchema = z.object({
     mixed_at: z.string().min(1).refine((v) => !isNaN(Date.parse(v)), "Invalid date"),
     ph_level: z.coerce.number().min(0).max(14).optional(),
     notes: z.string().max(2000).trim().optional(),
+    image_url: z.string().url().optional(),
 });
 
 export type BatchInput = z.infer<typeof BatchSchema>;
@@ -43,6 +45,20 @@ export const BatchSourceSchema = z.object({
 });
 
 export type BatchSourceInput = z.infer<typeof BatchSourceSchema>;
+
+// ─── Banner ───────────────────────────────────────────────────────────────────
+export const BannerSchema = z.object({
+    title: z.string().min(1, "Required").max(255).trim(),
+    content: z.string().min(1, "Required").max(2000).trim(),
+    bannerType: z.enum(["info", "warning", "success", "error"], { 
+        errorMap: () => ({ message: "Select a banner type" })
+    }),
+    expiresAt: z.string().optional()
+        .refine((v) => !v || !isNaN(Date.parse(v)), "Invalid expiration date")
+        .refine((v) => !v || new Date(v) > new Date(), "Expiration must be in the future"),
+});
+
+export type BannerInput = z.infer<typeof BannerSchema>;
 
 // ─── Validation helpers ───────────────────────────────────────────────────────
 

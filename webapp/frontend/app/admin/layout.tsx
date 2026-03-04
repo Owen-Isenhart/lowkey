@@ -5,6 +5,7 @@ import Link from "next/link";
 const ADMIN_NAV = [
   { href: "/admin",         label: "Dashboard" },
   { href: "/admin/events",  label: "Events" },
+  { href: "/admin/banners", label: "Banners" },
   { href: "/admin/batches", label: "Batches" },
 ];
 

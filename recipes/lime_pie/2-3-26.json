@@ -1,0 +1,121 @@
+{
+  "version": "v2.0.5",
+  "name": "Lowkey Lime Pie (Pre-release)",
+  "description": "Earlier iteration of the lime pie blend with higher vanilla notes and initial electrolyte formulation.",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm, focused attention without sedation.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/18681988/",
+      "amount": 180,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Clean, crisp carbonated base. Zero calories.",
+      "amount": 340,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Natural Lime Extract",
+      "category": "Flavour",
+      "description": "Key lime extract for citrus brightness.",
+      "amount": 6,
+      "unit": "g",
+      "cost_per_bulk": 48.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 12,
+        "carbs_g": 3.8,
+        "sugar_g": 0.1,
+        "sodium_mg": 2
+      }
+    },
+    {
+      "name": "Madagascar Vanilla Extract",
+      "category": "Flavour",
+      "description": "Vanilla bean extract with more prominent vanilla character.",
+      "amount": 3.5,
+      "unit": "g",
+      "cost_per_bulk": 72.00,
+      "bulk_amount": 200,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 15,
+        "carbs_g": 2,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Essential electrolyte for hydration.",
+      "amount": 120,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Potassium Chloride",
+      "category": "Electrolyte",
+      "description": "Balances sodium for optimal electrolyte ratio.",
+      "amount": 150,
+      "unit": "mg",
+      "cost_per_bulk": 8.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Stevia Extract",
+      "category": "Sweetener",
+      "description": "Natural plant-based sweetener with zero calories.",
+      "amount": 0.8,
+      "unit": "g",
+      "cost_per_bulk": 68.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

@@ -3,23 +3,22 @@ const { NotFoundError, ValidationError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
 const eventService = {
-  async createEvent(title, description, eventDate, location, imageUrl, userId) {
-    // Validate inputs
+  async createEvent({ title, description, location, city, lat, lng, date, end_date, image_url }) {
     if (!title || typeof title !== 'string' || title.length === 0 || title.length > 255) {
       throw new ValidationError('Invalid event title');
     }
     if (!location || typeof location !== 'string' || location.length === 0 || location.length > 255) {
       throw new ValidationError('Invalid event location');
     }
-    if (!eventDate || new Date(eventDate) <= new Date()) {
-      throw new ValidationError('Event date must be in the future');
+    if (!date) {
+      throw new ValidationError('Event date is required');
     }
 
     const { rows: result } = await pool.query(
-      `INSERT INTO events (title, description, event_date, location, image_url, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, title, description, event_date, location, image_url, created_by, created_at, updated_at`,
-      [title, description || null, eventDate, location, imageUrl || null, userId]
+      `INSERT INTO events (title, description, location, city, lat, lng, date, end_date, image_url, is_hidden)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE)
+       RETURNING id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden`,
+      [title, description || null, location, city || null, lat || null, lng || null, date, end_date || null, image_url || null]
     );
 
     logger.info('Event created', { eventId: result[0].id, title });
@@ -28,10 +27,9 @@ const eventService = {
 
   async getEvent(eventId) {
     const { rows: events } = await pool.query(
-      `SELECT e.*, u.email, u.first_name, u.last_name
-       FROM events e
-       LEFT JOIN users u ON e.created_by = u.id
-       WHERE e.id = $1`,
+      `SELECT id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden, created_at, updated_at
+       FROM events
+       WHERE id = $1`,
       [eventId]
     );
 
@@ -42,44 +40,48 @@ const eventService = {
     return events[0];
   },
 
-  async getAllEvents() {
-    const { rows: events } = await pool.query(
-      `SELECT e.*, u.email, u.first_name, u.last_name
-       FROM events e
-       LEFT JOIN users u ON e.created_by = u.id
-       ORDER BY e.event_date ASC`
-    );
-    return events;
-  },
-
   async getUpcomingEvents(limit = 10) {
+    logger.info('[getUpcomingEvents] Querying events WHERE date >= NOW() AND is_hidden = FALSE, limit:', limit);
+    logger.info('[getUpcomingEvents] Current time:', new Date().toISOString());
+    
     const { rows: events } = await pool.query(
-      `SELECT e.*, u.email, u.first_name, u.last_name
-       FROM events e
-       LEFT JOIN users u ON e.created_by = u.id
-       WHERE e.event_date >= CURRENT_TIMESTAMP
-       ORDER BY e.event_date ASC LIMIT $1`,
+      `SELECT id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden
+       FROM events
+       WHERE date >= NOW() AND is_hidden = FALSE
+       ORDER BY date ASC
+       LIMIT $1`,
       [limit]
     );
+    
+    logger.info('[getUpcomingEvents] Query returned events:', events.length, events.map(e => ({ id: e.id, title: e.title, date: e.date })));
     return events;
   },
 
-  async updateEvent(eventId, updates, userId) {
-    // Verify user owns event
-    const { rows: existing } = await pool.query(
-      'SELECT created_by FROM events WHERE id = $1',
-      [eventId]
+  async getAllEvents() {
+    logger.info('[getAllEvents] Fetching all events (for admin use)');
+    const { rows: events } = await pool.query(
+      `SELECT id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden
+       FROM events
+       ORDER BY date DESC`
     );
+    logger.info('[getAllEvents] Returned events:', events.length);
+    return events;
+  },
 
-    if (existing.length === 0) {
-      throw new NotFoundError('Event');
-    }
+  async getAllPublicEvents() {
+    logger.info('[getAllPublicEvents] Fetching all non-hidden events for public page');
+    const { rows: events } = await pool.query(
+      `SELECT id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden
+       FROM events
+       WHERE is_hidden = FALSE
+       ORDER BY date DESC`
+    );
+    logger.info('[getAllPublicEvents] Returned events:', events.length);
+    return events;
+  },
 
-    if (existing[0].created_by !== userId) {
-      throw new ValidationError('Can only update your own events');
-    }
-
-    const allowed = ['title', 'description', 'event_date', 'location', 'image_url'];
+  async updateEvent(eventId, updates) {
+    const allowed = ['title', 'description', 'location', 'city', 'lat', 'lng', 'date', 'end_date', 'image_url', 'is_hidden'];
     const updateKeys = Object.keys(updates).filter((k) => allowed.includes(k));
 
     if (updateKeys.length === 0) {
@@ -94,35 +96,29 @@ const eventService = {
     const { rows: result } = await pool.query(
       `UPDATE events SET ${setClause}, updated_at = CURRENT_TIMESTAMP
        WHERE id = $${updateKeys.length + 1}
-       RETURNING id, title, description, event_date, location, image_url, created_by, created_at, updated_at`,
+       RETURNING id, title, description, location, city, lat, lng, date, end_date, image_url, is_hidden`,
       [...values, eventId]
     );
 
-    logger.info('Event updated', { eventId, userId });
-    return result[0];
-  },
-
-  async deleteEvent(eventId, userId) {
-    // Verify user owns event
-    const { rows: existing } = await pool.query(
-      'SELECT created_by FROM events WHERE id = $1',
-      [eventId]
-    );
-
-    if (existing.length === 0) {
+    if (result.length === 0) {
       throw new NotFoundError('Event');
     }
 
-    if (existing[0].created_by !== userId) {
-      throw new ValidationError('Can only delete your own events');
-    }
+    logger.info('Event updated', { eventId });
+    return result[0];
+  },
 
+  async deleteEvent(eventId) {
     const { rows: result } = await pool.query(
       'DELETE FROM events WHERE id = $1 RETURNING id',
       [eventId]
     );
 
-    logger.info('Event deleted', { eventId, userId });
+    if (result.length === 0) {
+      throw new NotFoundError('Event');
+    }
+
+    logger.info('Event deleted', { eventId });
     return { success: true };
   },
 };

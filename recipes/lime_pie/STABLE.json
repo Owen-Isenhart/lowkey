@@ -1,0 +1,141 @@
+{
+  "version": "v2.1.0",
+  "name": "Lowkey Lime Pie",
+  "description": "A tropical-inspired nootropic blend with zesty lime and subtle vanilla notes. Packed with L-theanine for calm focus and electrolytes for sustained energy.",
+  "study_url": "https://pubmed.ncbi.nlm.nih.gov/example",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm, focused attention without sedation. Synergizes with caffeine.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/18681988/",
+      "amount": 200,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Clean, crisp carbonated base. Zero calories. Ultra-pure source.",
+      "amount": 340,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Natural Lime Extract",
+      "category": "Flavour",
+      "description": "Freshly pressed key lime extract for authentic citrus brightness.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example2",
+      "amount": 8,
+      "unit": "g",
+      "cost_per_bulk": 48.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 12,
+        "carbs_g": 3.8,
+        "sugar_g": 0.1,
+        "sodium_mg": 2
+      }
+    },
+    {
+      "name": "Madagascar Vanilla Extract",
+      "category": "Flavour",
+      "description": "Real vanilla bean extract for smooth, creamy undertones.",
+      "amount": 2,
+      "unit": "g",
+      "cost_per_bulk": 72.00,
+      "bulk_amount": 200,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 15,
+        "carbs_g": 2,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Essential electrolyte for hydration and cellular function.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example3",
+      "amount": 150,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Potassium Chloride",
+      "category": "Electrolyte",
+      "description": "Balances sodium for optimal electrolyte ratio.",
+      "amount": 200,
+      "unit": "mg",
+      "cost_per_bulk": 8.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Erythritol",
+      "category": "Sweetener",
+      "description": "Zero-calorie sweetener with no glycemic impact.",
+      "amount": 3,
+      "unit": "g",
+      "cost_per_bulk": 12.00,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 20,
+        "carbs_g": 100,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Vitamin C",
+      "category": "Vitamin",
+      "description": "Powerful antioxidant supporting immune function and collagen synthesis.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example4",
+      "amount": 45,
+      "unit": "mg",
+      "cost_per_bulk": 18.00,
+      "bulk_amount": 250,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

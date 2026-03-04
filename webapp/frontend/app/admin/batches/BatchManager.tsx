@@ -13,10 +13,12 @@ const BATCH_FIELDS = [
   { name: "mixed_at",       label: "Mix Date & Time *", type: "datetime-local", placeholder: "" },
   { name: "ph_level",       label: "pH Level",           type: "number", placeholder: "6.2" },
   { name: "notes",          label: "Notes",              type: "textarea", placeholder: "Any relevant production notes…" },
+  { name: "image_url",      label: "Image URL",          type: "url",    placeholder: "https://example.com/batch-photo.jpg" },
 ];
 
-export default function BatchManager({ batches, appUrl }: Props) {
+export default function BatchManager({ batches: initialBatches, appUrl }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [batches, setBatches] = useState<Batch[]>(initialBatches);
   const [state, setState] = useState<{
     status: "idle" | "loading" | "ok" | "error";
     message?: string;
@@ -30,8 +32,11 @@ export default function BatchManager({ batches, appUrl }: Props) {
     if (!formRef.current) return;
     setState({ status: "loading" });
     const fd = new FormData(formRef.current);
+    
     const result = await createBatch(fd);
     if ("success" in result) {
+      // Use the actual batch data from server
+      setBatches([...batches, result.batch]);
       setState({ status: "ok", message: "Batch created.", newBatchId: result.batchId });
       formRef.current.reset();
     } else {
@@ -41,7 +46,10 @@ export default function BatchManager({ batches, appUrl }: Props) {
 
   async function handleDelete(id: string) {
     setDeleting(id);
-    await deleteBatch(id);
+    const result = await deleteBatch(id);
+    if ("success" in result) {
+      setBatches(batches.filter(b => b.id !== id));
+    }
     setDeleting(null);
     setState({ status: "idle" });
   }
@@ -62,15 +70,26 @@ export default function BatchManager({ batches, appUrl }: Props) {
                 background: "var(--bg-elevated)", border: "1px solid var(--border)",
                 borderRadius: "var(--radius-md)",
               }}>
-                <div>
-                  <p className="text-mono" style={{ color: "var(--accent)", fontSize: "0.875rem", marginBottom: "2px" }}>
-                    #{b.id}
-                  </p>
-                  <p className="text-label">
-                    {b.recipe_version} · pH {b.ph_level?.toFixed(2) ?? "–"} · {new Date(b.mixed_at).toLocaleDateString()}
-                  </p>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center", flex: 1 }}>
+                  {b.image_url && (
+                    <img src={b.image_url} alt={b.id}
+                      style={{
+                        width: "48px", height: "48px", objectFit: "cover",
+                        borderRadius: "var(--radius-sm)", flexShrink: 0
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  )}
+                  <div>
+                    <p className="text-mono" style={{ color: "var(--accent)", fontSize: "0.875rem", marginBottom: "2px" }}>
+                      #{b.id}
+                    </p>
+                    <p className="text-label">
+                      {b.recipe_version} · pH {b.ph_level?.toFixed(2) ?? "–"} · {new Date(b.mixed_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
                   <a href={`/batch/${b.id}`} target="_blank" rel="noopener noreferrer"
                     style={{ padding: "6px 12px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)",
                       fontSize: "0.75rem", color: "var(--text-secondary)", textDecoration: "none" }}>

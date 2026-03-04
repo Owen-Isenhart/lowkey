@@ -13,18 +13,75 @@ export const INGREDIENT_META: Record<
     description: "Promotes calm, focused attention without sedation.",
     study_url: "https://pubmed.ncbi.nlm.nih.gov/18681988/",
   },
+  "L-Citrulline": {
+    category: "Nootropic",
+    description: "Promotes healthy blood flow and vasodilation for enhanced cognitive performance.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example5",
+  },
   "Sparkling Water": {
     category: "Base",
     description: "The clean, crisp carbonated base. Zero calories.",
+  },
+  "Natural Lime Extract": {
+    category: "Flavour",
+    description: "Freshly pressed key lime extract for authentic citrus brightness.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example2",
   },
   "Natural Lemon Flavor": {
     category: "Flavour",
     description: "Light natural lemon extract for brightness without sweetener load.",
   },
+  "Madagascar Vanilla Extract": {
+    category: "Flavour",
+    description: "Real vanilla bean extract for smooth, creamy undertones.",
+  },
+  "Mango Flavor Extract": {
+    category: "Flavour",
+    description: "Premium mango extract from ripened tropical fruit.",
+  },
+  "Passion Fruit Extract": {
+    category: "Flavour",
+    description: "Tart, exotic passion fruit for complex citrus notes.",
+  },
+  "Sodium Chloride": {
+    category: "Electrolyte",
+    description: "Essential electrolyte for hydration and cellular function.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example3",
+  },
+  "Potassium Chloride": {
+    category: "Electrolyte",
+    description: "Balances sodium for optimal electrolyte ratio.",
+  },
+  "Magnesium Glycinate": {
+    category: "Electrolyte",
+    description: "Highly bioavailable magnesium for muscle relaxation and cognitive function.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example6",
+  },
+  "Erythritol": {
+    category: "Sweetener",
+    description: "Zero-calorie sweetener with no glycemic impact.",
+  },
+  "Stevia Extract": {
+    category: "Sweetener",
+    description: "Natural plant-based sweetener with zero calories.",
+  },
+  "Sucralose": {
+    category: "Sweetener",
+    description: "High-intensity sweetener for zero-calorie formulations.",
+  },
+  "Vitamin C": {
+    category: "Vitamin",
+    description: "Powerful antioxidant supporting immune function and collagen synthesis.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example4",
+  },
+  "Vitamin B-Complex": {
+    category: "Vitamin",
+    description: "Energy production and nervous system support.",
+    study_url: "https://pubmed.ncbi.nlm.nih.gov/example7",
+  },
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  center:      "#7fae8f",
   Nootropic:   "#6b9fd4",
   Base:        "#a0a0b8",
   Flavour:     "#d4a56b",
@@ -51,12 +108,11 @@ interface PhysNode {
   vx: number;           // velocity
   vy: number;
   radius: number;
-  isCenter?: boolean;
 }
 
 interface Edge { source: string; target: string; restLength: number; }
 
-/* ─── Build initial graph ───────────────────────────────────────────────────── */
+/* ─── Build web-like Obsidian-style graph ───────────────────────────────────── */
 function buildGraph(
   recipe: Recipe,
   W: number,
@@ -65,11 +121,6 @@ function buildGraph(
   const cx = W / 2;
   const cy = H / 2;
 
-  const center: PhysNode = {
-    id: "lowkey", label: "lowkey", category: "center",
-    x: cx, y: cy, vx: 0, vy: 0, radius: 30, isCenter: true,
-  };
-
   // Group by category
   const byCat: Record<string, Ingredient[]> = {};
   for (const ing of recipe.ingredients) {
@@ -77,46 +128,85 @@ function buildGraph(
     (byCat[cat] ??= []).push(ing);
   }
 
-  const nodes: PhysNode[] = [center];
+  const allIngredients = recipe.ingredients;
+  const nodeMap = new Map<string, PhysNode>();
+  const nodes: PhysNode[] = [];
   const edges: Edge[] = [];
-  const cats = Object.keys(byCat);
 
-  cats.forEach((cat, ci) => {
-    const baseAngle = (ci / cats.length) * Math.PI * 2 - Math.PI / 2;
-    const catRadius = 140;
-
-    // Category cluster node
-    const catNode: PhysNode = {
-      id: `cat-${cat}`, label: cat, category: cat,
-      x: cx + Math.cos(baseAngle) * catRadius,
-      y: cy + Math.sin(baseAngle) * catRadius,
-      vx: 0, vy: 0, radius: 18,
+  // Create ingredient nodes distributed around the canvas in a web-like pattern
+  const angleSlice = (Math.PI * 2) / allIngredients.length;
+  const baseRadius = 180;
+  
+  allIngredients.forEach((ing, idx) => {
+    const meta = INGREDIENT_META[ing.name];
+    const category = meta?.category ?? "Other";
+    
+    // Use a more organic distribution by varying radius and adding slight randomization
+    const angle = idx * angleSlice + (Math.random() - 0.5) * 0.4;
+    const radiusVar = baseRadius + (Math.random() - 0.5) * 80;
+    
+    const node: PhysNode = {
+      id: ing.name,
+      label: ing.name,
+      category,
+      amount: `${ing.amount} ${ing.unit}`,
+      description: meta?.description,
+      study_url: meta?.study_url,
+      x: cx + Math.cos(angle) * radiusVar,
+      y: cy + Math.sin(angle) * radiusVar,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      radius: 14,
     };
-    nodes.push(catNode);
-    edges.push({ source: "lowkey", target: catNode.id, restLength: catRadius });
-
-    // Ingredient leaf nodes
-    byCat[cat].forEach((ing, ii) => {
-      const spread = baseAngle + ((ii - (byCat[cat].length - 1) / 2) * 0.6);
-      const ingRadius = 260;
-      const meta = INGREDIENT_META[ing.name];
-      const ingNode: PhysNode = {
-        id: ing.name,
-        label: ing.name,
-        category: cat,
-        amount: `${ing.amount} ${ing.unit}`,
-        description: meta?.description,
-        study_url: meta?.study_url,
-        x: cx + Math.cos(spread) * ingRadius + (Math.random() - 0.5) * 16,
-        y: cy + Math.sin(spread) * ingRadius + (Math.random() - 0.5) * 16,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        radius: 14,
-      };
-      nodes.push(ingNode);
-      edges.push({ source: catNode.id, target: ing.name, restLength: 120 });
-    });
+    nodes.push(node);
+    nodeMap.set(ing.name, node);
   });
+
+  // Create a web of connections - connect each ingredient to 2-3 nearest neighbors
+  // and also connect ingredients in the same category
+  const categoryMap = new Map<string, PhysNode[]>();
+  nodes.forEach((node) => {
+    if (!categoryMap.has(node.category)) {
+      categoryMap.set(node.category, []);
+    }
+    categoryMap.get(node.category)!.push(node);
+  });
+
+  // Connect same-category ingredients together
+  categoryMap.forEach((categoryNodes) => {
+    for (let i = 0; i < categoryNodes.length; i++) {
+      for (let j = i + 1; j < categoryNodes.length; j++) {
+        edges.push({
+          source: categoryNodes[i].id,
+          target: categoryNodes[j].id,
+          restLength: 140,
+        });
+      }
+    }
+  });
+
+  // Add some cross-category connections for the web effect
+  for (let i = 0; i < nodes.length; i++) {
+    // Connect to 1-2 random different-category nodes
+    const numConnections = Math.floor(Math.random() * 2) + 1;
+    for (let c = 0; c < numConnections; c++) {
+      let j = Math.floor(Math.random() * nodes.length);
+      if (j !== i && nodes[j].category !== nodes[i].category) {
+        const edgeKey = [nodes[i].id, nodes[j].id].sort().join('-');
+        // Avoid duplicate edges
+        if (!edges.some((e) => 
+          (e.source === nodes[i].id && e.target === nodes[j].id) ||
+          (e.source === nodes[j].id && e.target === nodes[i].id)
+        )) {
+          edges.push({
+            source: nodes[i].id,
+            target: nodes[j].id,
+            restLength: 180,
+          });
+        }
+      }
+    }
+  }
 
   return { nodes, edges };
 }
@@ -130,7 +220,7 @@ function tick(
 ) {
   const MAP = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
-  // Node-node repulsion
+  // Node-node repulsion - gentler to allow more clustering
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       const a = nodes[i], b = nodes[j];
@@ -138,9 +228,11 @@ function tick(
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       const minD = a.radius + b.radius + 28;
       if (dist < minD) {
-        const f = ((minD - dist) / dist) * 0.35;
-        if (!a.isCenter) { a.vx -= dx * f; a.vy -= dy * f; }
-        if (!b.isCenter) { b.vx += dx * f; b.vy += dy * f; }
+        const f = ((minD - dist) / dist) * 0.25;
+        a.vx -= dx * f;
+        a.vy -= dy * f;
+        b.vx += dx * f;
+        b.vy += dy * f;
       }
     }
   }
@@ -151,14 +243,15 @@ function tick(
     if (!a || !b) continue;
     const dx = b.x - a.x, dy = b.y - a.y;
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    const f = ((dist - e.restLength) / dist) * 0.07;
-    if (!a.isCenter) { a.vx += dx * f; a.vy += dy * f; }
-    if (!b.isCenter) { b.vx -= dx * f; b.vy -= dy * f; }
+    const f = ((dist - e.restLength) / dist) * 0.08;
+    a.vx += dx * f;
+    a.vy += dy * f;
+    b.vx -= dx * f;
+    b.vy -= dy * f;
   }
 
   // Gentle ambient drift + dampen + boundaries
   for (const n of nodes) {
-    if (n.isCenter) continue;
     n.vx += (Math.random() - 0.5) * 0.12;
     n.vy += (Math.random() - 0.5) * 0.12;
     n.vx *= 0.85;
@@ -188,8 +281,8 @@ function render(
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = isRelated ? "rgba(127,174,143,0.4)" : "rgba(60,60,66,0.45)";
-    ctx.lineWidth = isRelated ? 1.5 : 1;
+    ctx.strokeStyle = isRelated ? "rgba(127,174,143,0.5)" : "rgba(60,60,66,0.3)";
+    ctx.lineWidth = isRelated ? 1.5 : 0.8;
     ctx.stroke();
   }
 
@@ -200,14 +293,14 @@ function render(
     const r = n.radius + (isHov ? 5 : 0);
 
     // Glow
-    if (isHov || n.isCenter) {
-      ctx.shadowBlur = isHov ? 24 : 16;
+    if (isHov) {
+      ctx.shadowBlur = 24;
       ctx.shadowColor = color;
     }
 
     ctx.beginPath();
     ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = color + (n.isCenter ? "ff" : isHov ? "dd" : "99");
+    ctx.fillStyle = color + (isHov ? "dd" : "99");
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -298,6 +391,7 @@ export default function IngredientGraph({ recipe }: { recipe: Recipe }) {
     const rect = canvasRef.current!.getBoundingClientRect();
     const scaleX = CW / rect.width;
     const scaleY = CH / rect.height;
+
     const mx = (clientX - rect.left) * scaleX;
     const my = (clientY - rect.top) * scaleY;
     for (const n of nodesRef.current) {
@@ -312,7 +406,7 @@ export default function IngredientGraph({ recipe }: { recipe: Recipe }) {
     hovIdRef.current = found?.id ?? null;
     setHoveredNode(found);
     const rect = canvasRef.current!.getBoundingClientRect();
-    if (found && !found.isCenter) {
+    if (found) {
       setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     } else {
       setTooltipPos(null);
@@ -343,7 +437,7 @@ export default function IngredientGraph({ recipe }: { recipe: Recipe }) {
           width: "100%",
           height: "auto",
           display: "block",
-          cursor: hoveredNode?.study_url ? "pointer" : hoveredNode && !hoveredNode.isCenter ? "default" : "default",
+          cursor: hoveredNode?.study_url ? "pointer" : hoveredNode ? "default" : "default",
           borderRadius: "var(--radius-lg)",
           border: "1px solid var(--border)",
           background: "var(--bg-elevated)",
@@ -351,7 +445,7 @@ export default function IngredientGraph({ recipe }: { recipe: Recipe }) {
       />
 
       {/* Tooltip */}
-      {hoveredNode && tooltipPos && !hoveredNode.isCenter && (
+      {hoveredNode && tooltipPos && (
         <div
           style={{
             position: "absolute",

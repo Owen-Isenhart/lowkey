@@ -1,0 +1,137 @@
+{
+  "version": "v2.1.5",
+  "name": "Lowkey Tropical (Optimized)",
+  "description": "Refinement of the tropical formula with improved mango-passion fruit balance and added L-citrulline for better blood flow.",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm, focused attention without sedation.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/18681988/",
+      "amount": 200,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "L-Citrulline",
+      "category": "Nootropic",
+      "description": "Promotes healthy blood flow for enhanced cognitive performance.",
+      "amount": 200,
+      "unit": "mg",
+      "cost_per_bulk": 22.00,
+      "bulk_amount": 200,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Clean, crisp carbonated base. Zero calories.",
+      "amount": 330,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Mango Flavor Extract",
+      "category": "Flavour",
+      "description": "Premium mango extract from ripened tropical fruit.",
+      "amount": 5,
+      "unit": "g",
+      "cost_per_bulk": 54.00,
+      "bulk_amount": 450,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 22,
+        "carbs_g": 5.2,
+        "sugar_g": 0.2,
+        "sodium_mg": 1
+      }
+    },
+    {
+      "name": "Passion Fruit Extract",
+      "category": "Flavour",
+      "description": "Tart, exotic passion fruit for complex citrus notes.",
+      "amount": 3,
+      "unit": "g",
+      "cost_per_bulk": 62.00,
+      "bulk_amount": 300,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 18,
+        "carbs_g": 4.1,
+        "sugar_g": 0.3,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Essential electrolyte for hydration.",
+      "amount": 150,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Potassium Chloride",
+      "category": "Electrolyte",
+      "description": "Balances sodium for optimal electrolyte ratio.",
+      "amount": 160,
+      "unit": "mg",
+      "cost_per_bulk": 8.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Stevia Extract",
+      "category": "Sweetener",
+      "description": "Natural plant-based sweetener.",
+      "amount": 0.9,
+      "unit": "g",
+      "cost_per_bulk": 68.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

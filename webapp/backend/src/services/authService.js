@@ -1,8 +1,11 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const pool = require('../db/connection');
 const tokenService = require('../utils/tokenService');
 const { AuthenticationError, NotFoundError, ValidationError } = require('../utils/errors');
 const logger = require('../utils/logger');
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const authService = {
   async getGoogleTokens(code) {
@@ -85,10 +88,11 @@ const authService = {
       const tokens = tokenService.generateTokenPair(user.id, user.is_admin);
 
       // Store refresh token in database
+      const hashedRefreshToken = hashToken(tokens.refreshToken);
       await pool.query(
         `INSERT INTO sessions (user_id, refresh_token, expires_at)
          VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
-        [user.id, tokens.refreshToken]
+        [user.id, hashedRefreshToken]
       );
 
       return {
@@ -111,6 +115,65 @@ const authService = {
     }
   },
 
+  async handleInternalLogin({ providerId, email, firstName, lastName, picture }) {
+    try {
+      if (!email || !providerId) {
+        throw new ValidationError('Invalid user information');
+      }
+
+      const { rows: users } = await pool.query(
+        'SELECT * FROM users WHERE google_id = $1 OR email = $2',
+        [providerId, email]
+      );
+
+      let user;
+
+      if (users.length > 0) {
+        user = users[0];
+        if (picture && user.picture_url !== picture) {
+          await pool.query(
+            'UPDATE users SET picture_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [picture, user.id]
+          );
+        }
+      } else {
+        const { rows: newUsers } = await pool.query(
+          `INSERT INTO users (email, google_id, first_name, last_name, picture_url, is_admin)
+           VALUES ($1, $2, $3, $4, $5, false)
+           RETURNING id, email, first_name, last_name, picture_url, is_admin`,
+          [email, providerId, firstName, lastName, picture || null]
+        );
+        user = newUsers[0];
+        logger.info('New user created via internal auth proxy', { email: user.email });
+      }
+
+      const tokens = tokenService.generateTokenPair(user.id, user.is_admin);
+      const hashedRefreshToken = hashToken(tokens.refreshToken);
+
+      await pool.query(
+        `INSERT INTO sessions (user_id, refresh_token, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+        [user.id, hashedRefreshToken]
+      );
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          pictureUrl: user.picture_url,
+          isAdmin: user.is_admin,
+        },
+        tokens,
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) throw error;
+      logger.error('Error in handleInternalLogin', error.message);
+      throw new AuthenticationError('Failed to complete internal login');
+    }
+  },
+
   async refreshAccessToken(refreshToken) {
     try {
       const decoded = tokenService.verifyToken(refreshToken);
@@ -118,10 +181,11 @@ const authService = {
         throw new AuthenticationError('Invalid refresh token');
       }
 
+      const hashedRefreshToken = hashToken(refreshToken);
       // Verify refresh token exists in database
       const { rows: sessions } = await pool.query(
         'SELECT * FROM sessions WHERE refresh_token = $1 AND expires_at > NOW()',
-        [refreshToken]
+        [hashedRefreshToken]
       );
 
       if (sessions.length === 0) {
@@ -151,9 +215,10 @@ const authService = {
 
   async logout(refreshToken) {
     try {
+      const hashedRefreshToken = hashToken(refreshToken);
       await pool.query(
         'DELETE FROM sessions WHERE refresh_token = $1',
-        [refreshToken]
+        [hashedRefreshToken]
       );
       return { success: true };
     } catch (error) {

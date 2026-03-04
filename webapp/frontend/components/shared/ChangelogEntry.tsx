@@ -6,13 +6,14 @@ import type { RecipeHistoryEntry, Recipe } from "@/types";
 interface ChangelogEntryProps {
   entry: RecipeHistoryEntry;
   recipe: Recipe;
+  isLast?: boolean;
 }
 
-export default function ChangelogEntry({ entry, recipe }: ChangelogEntryProps) {
+export default function ChangelogEntry({ entry, recipe, isLast = false }: ChangelogEntryProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <li style={{ display: "flex", gap: "24px", paddingBottom: "40px", position: "relative" }}>
+    <li style={{ display: "flex", gap: "24px", paddingBottom: isLast ? "0px" : "40px", position: "relative" }}>
       {/* Dot */}
       <div
         style={{

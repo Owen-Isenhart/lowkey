@@ -45,6 +45,7 @@ export interface Batch {
     mixed_at: string;       // ISO 8601
     ph_level: number;
     notes?: string;
+    image_url?: string;
     ingredient_sources: IngredientSource[];
 }
 
@@ -77,6 +78,8 @@ export interface LowkeyEvent {
     lng?: number;
     date: string;    // ISO 8601
     end_date?: string;
+    image_url?: string;
+    is_hidden?: boolean;
 }
 
 // ─── Shop Types ────────────────────────────────────────────────────────────────
@@ -88,6 +91,7 @@ export interface Product {
     description: string;
     price_cents: number;
     image_url?: string;
+    obj_model_path?: string;
     type: "single" | "subscription";
     active: boolean;
 }
@@ -95,4 +99,18 @@ export interface Product {
 export interface CartItem {
     product: Product;
     quantity: number;
+}
+
+// ─── Admin / Banner Types ───────────────────────────────────────────────────────
+
+export interface Banner {
+    id: string;
+    title: string;
+    content: string;
+    banner_type: "info" | "warning" | "success" | "error";
+    is_active: boolean;
+    expires_at: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
 }

@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const pool = require('./db/connection');
 const logger = require('./utils/logger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -12,8 +14,20 @@ const bannerRoutes = require('./routes/banners');
 const batchRoutes = require('./routes/batches');
 const recipeRoutes = require('./routes/recipes');
 const orderRoutes = require('./routes/orders');
+const storeRoutes = require('./routes/stores');
 
 const app = express();
+
+// Security middleware
+app.use(helmet());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window`
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
 
 // Middleware
 app.use(cors({
@@ -38,6 +52,7 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/batches', batchRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/stores', storeRoutes);
 
 // 404 handler
 app.use(notFound);

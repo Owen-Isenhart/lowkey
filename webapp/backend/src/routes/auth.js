@@ -28,6 +28,27 @@ router.post('/google/callback', async (req, res, next) => {
   }
 });
 
+// Internal endpoint for NextAuth proxy
+router.post('/internal-login', async (req, res, next) => {
+  try {
+    const apiKey = req.headers['x-internal-key'];
+    if (apiKey !== process.env.INTERNAL_API_KEY) {
+      throw new AuthenticationError('Invalid internal API key');
+    }
+
+    const { providerId, email, firstName, lastName, picture } = req.body;
+    const { user, tokens } = await authService.handleInternalLogin({ providerId, email, firstName, lastName, picture });
+
+    res.json({
+      user,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Refresh access token
 router.post('/refresh', async (req, res, next) => {
   try {

@@ -1,19 +1,25 @@
 import type { Product } from "@/types";
-import { query, queryOne } from "@/lib/db";
 
 export async function getProducts(): Promise<Product[]> {
-    return query<Product>(
-        `SELECT id, slug, name, description, price_cents, image_url, type, active
-     FROM products
-     WHERE active = true
-     ORDER BY type ASC, id ASC`
-    );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    try {
+        const res = await fetch(`${apiUrl}/products`, { next: { revalidate: 60 } });
+        if (!res.ok) return [];
+        return res.json();
+    } catch (e) {
+        console.error("Failed to fetch products", e);
+        return [];
+    }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-    return queryOne<Product>(
-        `SELECT id, slug, name, description, price_cents, image_url, type, active
-     FROM products WHERE slug = $1 AND active = true`,
-        [slug]
-    );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    try {
+        const res = await fetch(`${apiUrl}/products/${slug}`, { next: { revalidate: 60 } });
+        if (!res.ok) return null;
+        return res.json();
+    } catch (e) {
+        console.error("Failed to fetch product", e);
+        return null;
+    }
 }

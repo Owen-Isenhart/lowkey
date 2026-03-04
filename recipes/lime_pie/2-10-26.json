@@ -1,0 +1,89 @@
+{
+  "version": "v1.8.3",
+  "name": "Lowkey Lime Pie (Classic)",
+  "description": "An earlier iteration focusing on lime flavor simplicity with minimal electrolyte formulation.",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm focus.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/18681988/",
+      "amount": 160,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Carbonated base.",
+      "amount": 345,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Natural Lime Extract",
+      "category": "Flavour",
+      "description": "Key lime for bright notes.",
+      "amount": 10,
+      "unit": "g",
+      "cost_per_bulk": 48.00,
+      "bulk_amount": 500,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 12,
+        "carbs_g": 3.8,
+        "sugar_g": 0.1,
+        "sodium_mg": 2
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Basic electrolyte.",
+      "amount": 100,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Sucralose",
+      "category": "Sweetener",
+      "description": "High-intensity sweetener.",
+      "amount": 0.5,
+      "unit": "g",
+      "cost_per_bulk": 145.00,
+      "bulk_amount": 50,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

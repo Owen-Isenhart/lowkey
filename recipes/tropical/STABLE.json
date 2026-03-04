@@ -1,0 +1,157 @@
+{
+  "version": "v2.2.0",
+  "name": "Lowkey Tropical",
+  "description": "A vibrant tropical blend featuring mango, passion fruit, and coconut. Enhanced with L-citrulline for blood flow and sustained mental clarity.",
+  "study_url": "https://pubmed.ncbi.nlm.nih.gov/example",
+  "total_volume_oz": 12.0,
+  "ingredients": [
+    {
+      "name": "L-Theanine",
+      "category": "Nootropic",
+      "description": "Promotes calm, focused attention without sedation.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/18681988/",
+      "amount": 200,
+      "unit": "mg",
+      "cost_per_bulk": 15.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "L-Citrulline",
+      "category": "Nootropic",
+      "description": "Promotes healthy blood flow and vasodilation for enhanced cognitive performance.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example5",
+      "amount": 250,
+      "unit": "mg",
+      "cost_per_bulk": 22.00,
+      "bulk_amount": 200,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "Base",
+      "description": "Clean, crisp carbonated base. Zero calories.",
+      "amount": 330,
+      "unit": "g",
+      "cost_per_bulk": 1.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 5
+      }
+    },
+    {
+      "name": "Mango Flavor Extract",
+      "category": "Flavour",
+      "description": "Premium mango extract from ripened tropical fruit.",
+      "amount": 6,
+      "unit": "g",
+      "cost_per_bulk": 54.00,
+      "bulk_amount": 450,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 22,
+        "carbs_g": 5.2,
+        "sugar_g": 0.2,
+        "sodium_mg": 1
+      }
+    },
+    {
+      "name": "Passion Fruit Extract",
+      "category": "Flavour",
+      "description": "Tart, exotic passion fruit for complex citrus notes.",
+      "amount": 4,
+      "unit": "g",
+      "cost_per_bulk": 62.00,
+      "bulk_amount": 300,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 18,
+        "carbs_g": 4.1,
+        "sugar_g": 0.3,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Sodium Chloride",
+      "category": "Electrolyte",
+      "description": "Essential electrolyte for hydration and cellular function.",
+      "amount": 165,
+      "unit": "mg",
+      "cost_per_bulk": 0.50,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 386000
+      }
+    },
+    {
+      "name": "Magnesium Glycinate",
+      "category": "Electrolyte",
+      "description": "Highly bioavailable magnesium for muscle relaxation and cognitive function.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example6",
+      "amount": 180,
+      "unit": "mg",
+      "cost_per_bulk": 28.00,
+      "bulk_amount": 300,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Erythritol",
+      "category": "Sweetener",
+      "description": "Zero-calorie sweetener with no glycemic impact.",
+      "amount": 3,
+      "unit": "g",
+      "cost_per_bulk": 12.00,
+      "bulk_amount": 1000,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 20,
+        "carbs_g": 100,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    },
+    {
+      "name": "Vitamin B-Complex",
+      "category": "Vitamin",
+      "description": "Energy production and nervous system support.",
+      "study_url": "https://pubmed.ncbi.nlm.nih.gov/example7",
+      "amount": 15,
+      "unit": "mg",
+      "cost_per_bulk": 35.00,
+      "bulk_amount": 100,
+      "bulk_unit": "g",
+      "nutrition_per_100g": {
+        "calories": 0,
+        "carbs_g": 0,
+        "sugar_g": 0,
+        "sodium_mg": 0
+      }
+    }
+  ]
+}

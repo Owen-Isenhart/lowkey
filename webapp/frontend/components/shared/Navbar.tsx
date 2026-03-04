@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { Suspense } from "react";
 import SignOutButton from "./SignOutButton";
+import { CartBadge } from "./CartBadge";
 
 const NAV_LINKS = [
   { href: "/changelog",     label: "Changelog" },
@@ -17,26 +18,34 @@ async function AuthSection() {
 
   if (!session?.user) {
     return (
-      <Link
-        href="/shop/sign-in"
-        style={{
-          fontSize: "0.8125rem",
-          padding: "8px 16px",
-          background: "var(--accent)",
-          color: "#000",
-          borderRadius: "var(--radius-md)",
-          textDecoration: "none",
-          fontWeight: 500,
-          cursor: "pointer",
-        }}
-      >
-        Sign In
-      </Link>
+      <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+        <Suspense fallback={<div style={{ width: "50px" }} />}>
+          <CartBadge />
+        </Suspense>
+        <Link
+          href="/shop/sign-in"
+          style={{
+            fontSize: "0.8125rem",
+            padding: "8px 16px",
+            background: "var(--accent)",
+            color: "#000",
+            borderRadius: "var(--radius-md)",
+            textDecoration: "none",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          Sign In
+        </Link>
+      </div>
     );
   }
 
   return (
     <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+      <Suspense fallback={<div style={{ width: "50px" }} />}>
+        <CartBadge />
+      </Suspense>
       {session.user.isAdmin && (
         <Link
           href="/admin"

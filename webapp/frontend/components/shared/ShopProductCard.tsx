@@ -1,7 +1,10 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
+import { useState } from "react";
 import type { Product } from "@/types";
+import { useCart } from "@/components/providers/CartProvider";
+import FlavorDisplay from "@/components/3d/FlavorDisplay";
 
 interface Props {
   product: Product;
@@ -13,16 +16,31 @@ function formatPrice(cents: number) {
 
 export default function ShopProductCard({ product }: Props) {
   const { data: session } = useSession();
+  const { addItem } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
 
-  function handleAddToCart() {
+  async function handleAddToCart() {
     if (!session) {
       // Redirect to sign in, then return to shop
       signIn(undefined, { callbackUrl: "/shop" });
       return;
     }
-    // TODO: implement cart addition action
-    console.log("Add to cart:", product.id);
+
+    setIsAdding(true);
+    try {
+      // Add to cart optimistically (localStorage is instant)
+      addItem(product, 1);
+      
+      // Brief feedback - cart update is immediate via context
+      setTimeout(() => setIsAdding(false), 300);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+      setIsAdding(false);
+    }
   }
+
+  // Fallback for products without 3D models
+  const hasModel = product.obj_model_path && product.obj_model_path.trim() !== "";
 
   return (
     <div
@@ -39,19 +57,31 @@ export default function ShopProductCard({ product }: Props) {
       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)")}
       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")}
     >
-      {/* Product image placeholder */}
+      {/* Product image/3D model display */}
       <div
         style={{
           width: "100%",
-          aspectRatio: "4/3",
+          aspectRatio: "1",
           background: "var(--bg-subtle)",
           borderRadius: "var(--radius-md)",
+          overflow: "hidden",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <span className="text-label">lowkey</span>
+        {hasModel ? (
+          <FlavorDisplay
+            modelPath={product.obj_model_path}
+            width={300}
+            height={300}
+          />
+        ) : (
+          // Fallback for products without models
+          <span className="text-label" style={{ color: "var(--text-muted)" }}>
+            lowkey
+          </span>
+        )}
       </div>
 
       {/* Product info */}
@@ -77,21 +107,27 @@ export default function ShopProductCard({ product }: Props) {
         </span>
         <button
           onClick={handleAddToCart}
+          disabled={isAdding}
           style={{
             padding: "8px 18px",
-            background: "var(--accent)",
+            background: isAdding ? "var(--border)" : "var(--accent)",
             color: "#0c0c0e",
             border: "none",
             borderRadius: "var(--radius-md)",
             fontSize: "0.8125rem",
             fontWeight: 600,
-            cursor: "pointer",
-            transition: "opacity var(--duration-fast) var(--ease-out)",
+            cursor: isAdding ? "default" : "pointer",
+            transition: "opacity var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out)",
+            opacity: isAdding ? 0.6 : 1,
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.8")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
+          onMouseEnter={(e) => !isAdding && ((e.currentTarget as HTMLElement).style.opacity = "0.8")}
+          onMouseLeave={(e) => !isAdding && ((e.currentTarget as HTMLElement).style.opacity = "1")}
         >
-          {session ? "Add to cart" : "Sign in to buy"}
+          {session
+            ? isAdding
+              ? "Adding..."
+              : "Add to cart"
+            : "Sign in to buy"}
         </button>
       </div>
     </div>

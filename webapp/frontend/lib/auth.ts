@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import { queryOne } from "@/lib/db";
 
 /**
  * NextAuth v5 configuration.
@@ -21,8 +20,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             clientSecret: process.env.AUTH_GITHUB_SECRET!,
         }),
         Google({
-            clientId: process.env.AUTH_GOOGLE_ID!,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
     ],
 
@@ -33,33 +32,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
 
     callbacks: {
-        /**
-         * Runs when a JWT is created (sign-in) or refreshed.
-         * We look up is_admin from the DB and store it in the token.
-         * The token is signed — it cannot be tampered with by the client.
-         */
-        async jwt({ token, user }) {
-            // `user` is only present on initial sign-in
-            if (user?.id) {
-                token.sub = user.id;
-                // Look up admin status from the DB at sign-in time
-                const row = await queryOne<{ is_admin: boolean }>(
-                    "SELECT is_admin FROM users WHERE id = $1",
-                    [user.id]
-                ).catch(() => null);
-                token.isAdmin = row?.is_admin ?? false;
+        async jwt({ token, user, account, profile }) {
+            if (user?.id && account && profile) {
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+                    const res = await fetch(`${apiUrl}/auth/internal-login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-internal-key': process.env.INTERNAL_API_KEY || 'default-secret-change-me'
+                        },
+                        body: JSON.stringify({
+                            providerId: account.providerAccountId,
+                            email: user.email,
+                            firstName: user.name?.split(' ')[0] || '',
+                            lastName: user.name?.split(' ').slice(1).join(' ') || '',
+                            picture: user.image
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        token.sub = data.user.id;
+                        token.isAdmin = data.user.isAdmin;
+                        token.backendToken = data.accessToken;
+                    } else {
+                        console.error('Failed to sync with backend', await res.text());
+                        token.isAdmin = false;
+                    }
+                } catch (err) {
+                    console.error('Backend sync error', err);
+                }
             }
             return token;
         },
 
-        /**
-         * Exposes safe fields to the client session.
-         * `isAdmin` comes from the signed JWT — not from client input.
-         */
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
                 session.user.isAdmin = (token.isAdmin as boolean) ?? false;
+                // Add backendToken to the session so Server Actions can use it
+                (session as any).backendToken = token.backendToken;
             }
             return session;
         },
